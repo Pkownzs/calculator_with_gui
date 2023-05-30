@@ -1,11 +1,14 @@
 import tkinter
+from tkinter import messagebox
 
 def add_digit(digit):
     value = calc.get()
     if value [0] == '0' and len(value) == 1:
         value = value[1:]
+    calc['state'] = tkinter.NORMAL
     calc.delete(0, tkinter.END)
     calc.insert(0, value+digit)
+    calc['state'] = tkinter.DISABLED
     
 def add_operation(operation):
     value = calc.get()
@@ -14,19 +17,32 @@ def add_operation(operation):
     elif '+' in value or '-' in value or '*' in value or '/' in value:
         calculate()
         value = calc.get()
+    calc['state'] = tkinter.NORMAL
     calc.delete(0, tkinter.END)
     calc.insert(0,value+operation)
+    calc['state'] = tkinter.DISABLED
 
 def calculate():
     value = calc.get()
     if value[-1] in '+-/*':
         value = value+value[:-1]
+    calc['state'] = tkinter.NORMAL
     calc.delete(0, tkinter.END)
-    calc.insert(0, eval(value))
-    
+    try:
+        calc.insert(0, eval(value))
+    except (NameError, SyntaxError):
+        messagebox.showinfo('Warning','You need to write only numbers!')
+        calc.insert(0,0)
+    except ZeroDivisionError:
+        messagebox.showinfo('Warning', 'You cant divide by zero!')
+        calc.insert(0,0)
+    calc ['state'] = tkinter.DISABLED
+
 def clear():
+    calc['state'] = tkinter.NORMAL
     calc.delete(0, tkinter.END)
     calc.insert(0,0)
+    calc['state'] = tkinter.DISABLED
 
 def make_digit_button(digit):
     return tkinter.Button(text=digit, bd=5, font=('Arial', 15), command=lambda : add_digit(digit))
@@ -40,14 +56,26 @@ def make_calc_button(operation):
 def make_clear_button(operation):
     return tkinter.Button(text=operation, bd=5, font=('Arial', 13), fg='red', command=clear)
 
+def press_key(event):
+    print(repr(event.char))
+    if event.char.isdigit():
+        add_digit(event.char)
+    elif event.char in '+-*/':
+        add_operation(event.char)
+    elif event.char == '\r':
+        calculate()
+
 window = tkinter.Tk()
 window.geometry(f"240x260+100+200")
 #window['background'] = '#33ffe6'
 window.config(background = '#33ffe6')
 window.title('Calculator')
 
+window.bind('<Key>', press_key)
+
 calc = tkinter.Entry(window, justify=tkinter.RIGHT, font=('Arial', 15), width=15)
 calc.insert(0,'0')
+calc['state'] = tkinter.DISABLED
 calc.grid(row=0, column=0, columnspan=4, stick='we', padx=5)
 
 make_digit_button('1').grid(row=1, column=0, stick='wens', padx=5, pady=5, )
